@@ -7,7 +7,6 @@ import os
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 
-PORTS = os.getenv('PORTS', '25565')  # Default to Minecraft port
 RATE = os.getenv('RATE')
 SCANNED_FILE_NAME = 'res.json'
 FOUND_FILE_NAME = 'found.json'
@@ -45,22 +44,20 @@ def main():
     return 0
 
 def scan(range):
-  ports = PORTS.split(',')
-  for port in ports:
-    dramatiq_actors.worker_log.send(f'Scanning range: {Color.YELLOW}{range}{Color.END} for open {port} port @ {RATE} kp/s', __name__)
-    command = f'masscan -p{port} {range} --rate {RATE} --wait {3} -oJ {SCANNED_FILE_NAME}'
-    os.system(command)
-    ips = []
-    try:
-      ips = ip_range.get_scanned_ips(SCANNED_FILE_NAME)
-      dramatiq_actors.worker_log.send(f'{len(ips)} ip(s) found in range: {Color.GREEN}{range}{Color.END}', __name__)
-    except json.JSONDecodeError:
-      dramatiq_actors.worker_log.send(f'No servers found in range {Color.RED}{range}{Color.END}', __name__)
-    total = len(ips)
-    count = 0
-    for ip in ips:
-      count += 1
-      dramatiq_actors.slp.send(ip, count, total)
+  dramatiq_actors.worker_log.send(f'Scanning range: {Color.YELLOW}{range}{Color.END} for open ports @ {RATE} kp/s', __name__)
+  command = f'masscan {range} --rate {RATE} --wait {3} -oJ {SCANNED_FILE_NAME}'
+  os.system(command)
+  ips = []
+  try:
+    ips = ip_range.get_scanned_ips(SCANNED_FILE_NAME)
+    dramatiq_actors.worker_log.send(f'{len(ips)} ip(s) found in range: {Color.GREEN}{range}{Color.END}', __name__)
+  except json.JSONDecodeError:
+    dramatiq_actors.worker_log.send(f'No servers found in range {Color.RED}{range}{Color.END}', __name__)
+  total = len(ips)
+  count = 0
+  for ip in ips:
+    count += 1
+    dramatiq_actors.slp.send(ip, count, total)
 
 if __name__ == '__main__':
   main()
