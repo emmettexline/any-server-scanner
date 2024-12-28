@@ -1,4 +1,8 @@
-# Public minecraft server scanner
+# Public server scanner
+
+Forked from rezonmain/mc-server-scanner
+
+The goal is to expand this project to all servers similar to the functionality of shodan.io
 
 It uses [masscan](https://github.com/robertdavidgraham/masscan) and [dramatiq](https://dramatiq.io/) to scan for public minecraft servers on default port `25556`.
 
